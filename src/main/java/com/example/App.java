@@ -1,7 +1,7 @@
 package com.example;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class App {
 
@@ -43,12 +43,10 @@ public class App {
     }
 
     private static void logApplicationError(Exception e) {
-        // Use traditional instanceof checks to maintain compatibility
-        if (e instanceof RuntimeException) {
-            RuntimeException runtimeEx = (RuntimeException) e;
-            LOGGER.log(Level.SEVERE, String.format("Runtime error in application: %s", runtimeEx.getMessage()),
-                    runtimeEx);
-        } else if (e instanceof Exception) {
+        if (e instanceof RuntimeException runtimeEx) {
+            String errorMessage = String.format("Runtime error in application: %s", runtimeEx.getMessage());
+            LOGGER.log(Level.SEVERE, errorMessage, runtimeEx);
+        } else {
             LOGGER.log(Level.SEVERE, "Application error occurred", e);
         }
     }
@@ -70,13 +68,16 @@ public class App {
         }
     }
 
-    // FIXED: Extracted nested try block into separate method
     private void performCalculatorOperations() {
-        int result = calculator.calculate(10, 5, Calculator.Operation.ADD);
-        LOGGER.info(String.format("10 + 5 = %d", result));
+        int addResult = calculator.calculate(10, 5, Calculator.Operation.ADD);
+        if (LOGGER.isLoggable(Level.INFO)) {
+            LOGGER.log(Level.INFO, "10 + 5 = {0}", addResult);
+        }
 
-        result = calculator.calculate(10, 5, "divide");
-        LOGGER.info(String.format("10 / 5 = %d", result));
+        int divideResult = calculator.calculate(10, 5, "divide");
+        if (LOGGER.isLoggable(Level.INFO)) {
+            LOGGER.log(Level.INFO, "10 / 5 = {0}", divideResult);
+        }
 
         testDivisionByZero();
     }
@@ -85,22 +86,26 @@ public class App {
         try {
             calculator.calculate(10, 0, Calculator.Operation.DIVIDE);
         } catch (ArithmeticException e) {
-            LOGGER.warning(String.format("Expected error caught: %s", e.getMessage()));
+            String warningMessage = String.format("Expected error caught: %s", e.getMessage());
+            LOGGER.warning(warningMessage);
         }
     }
 
     private void demonstrateUserService() {
         String testUser = "admin";
+        boolean userExists = userService.findUser(testUser);
 
-        if (userService.findUser(testUser)) {
-            LOGGER.info(String.format("User '%s' exists in the system", testUser));
+        if (userExists) {
+            String userExistsMessage = String.format("User '%s' exists in the system", testUser);
+            LOGGER.info(userExistsMessage);
 
-            // FIXED: Conditional logging (only log if condition is met)
             boolean deleted = userService.deleteUser(testUser);
             String deletionStatus = deleted ? "SUCCESS" : "FAILED";
-            LOGGER.info(String.format("Deletion attempt for user '%s': %s", testUser, deletionStatus));
+            String deletionMessage = String.format("Deletion attempt for user '%s': %s", testUser, deletionStatus);
+            LOGGER.info(deletionMessage);
         } else {
-            LOGGER.info(String.format("User '%s' not found in the system", testUser));
+            String userNotFoundMessage = String.format("User '%s' not found in the system", testUser);
+            LOGGER.info(userNotFoundMessage);
         }
 
         userService.logActivity("Application demo completed");

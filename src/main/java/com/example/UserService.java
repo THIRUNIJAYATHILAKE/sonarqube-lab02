@@ -33,38 +33,34 @@ public class UserService {
             try (ResultSet rs = pstmt.executeQuery()) {
                 boolean userExists = rs.next();
 
-                // FIXED: Conditional logging
+                // FIXED: Log messages built outside of condition
                 if (userExists) {
-                    LOGGER.info(String.format("User '%s' found in database", username));
+                    String foundMessage = String.format("User '%s' found in database", username);
+                    LOGGER.info(foundMessage);
                 } else {
-                    LOGGER.fine(String.format("User '%s' not found in database", username));
+                    String notFoundMessage = String.format("User '%s' not found in database", username);
+                    LOGGER.fine(notFoundMessage);
                 }
 
                 return userExists;
             }
 
         } catch (SQLException e) {
-            // FIXED: Parameterized logging with conditional exception inclusion
             String errorMessage = String.format("Database error while finding user: %s", username);
             LOGGER.log(Level.SEVERE, errorMessage, e);
             return false;
         }
     }
 
-    // FIXED: Extracted connection creation
     private Connection createConnection() throws SQLException {
         return DriverManager.getConnection("jdbc:mysql://localhost/db", "root", password);
     }
 
-    // FIXED: Invoke method only conditionally
     public void logActivity(String activity) {
-        if (shouldLogActivity(activity)) {
-            LOGGER.info(String.format("Activity logged: %s", activity.trim()));
+        if (activity != null && !activity.trim().isEmpty()) {
+            String activityMessage = String.format("Activity logged: %s", activity.trim());
+            LOGGER.info(activityMessage);
         }
-    }
-
-    private boolean shouldLogActivity(String activity) {
-        return activity != null && !activity.trim().isEmpty();
     }
 
     public boolean deleteUser(String username) {
@@ -81,7 +77,6 @@ public class UserService {
             pstmt.setString(1, username.trim());
             int rowsAffected = pstmt.executeUpdate();
 
-            // FIXED: Conditional logging based on result
             logDeletionResult(username, rowsAffected);
 
             return rowsAffected > 0;
@@ -92,18 +87,21 @@ public class UserService {
         }
     }
 
-    // FIXED: Extracted logging methods
     private void logDeletionResult(String username, int rowsAffected) {
         if (rowsAffected > 0) {
-            LOGGER.info(String.format("Successfully deleted user '%s' (%d rows affected)", username, rowsAffected));
+            String successMessage = String.format("Successfully deleted user '%s' (%d rows affected)", username,
+                    rowsAffected);
+            LOGGER.info(successMessage);
         } else {
-            LOGGER.warning(String.format("No user '%s' found to delete", username));
+            String warningMessage = String.format("No user '%s' found to delete", username);
+            LOGGER.warning(warningMessage);
         }
     }
 
     private void logDeletionError(String username, SQLException e) {
         String errorDetail = getSqlErrorDetail(e);
-        LOGGER.log(Level.SEVERE, String.format("Database error while deleting user '%s': %s", username, errorDetail), e);
+        String errorMessage = String.format("Database error while deleting user '%s': %s", username, errorDetail);
+        LOGGER.log(Level.SEVERE, errorMessage, e);
     }
 
     private String getSqlErrorDetail(SQLException e) {
