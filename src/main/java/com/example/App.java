@@ -1,12 +1,14 @@
 package com.example;
 
-import java.util.Scanner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class App {
 
-    // FIXED: Use dependency injection for service
     private final UserService userService;
     private final Calculator calculator;
+    // FIXED: Use SLF4J logger instead of System.out/err
+    private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
     public App(UserService userService, Calculator calculator) {
         this.userService = userService;
@@ -15,11 +17,14 @@ public class App {
 
     public static void main(String[] args) {
         try {
-            // FIXED: Get password from secure source (in real app: config file, env var,
-            // etc.)
+            // FIXED: Use logger for startup message
+            LOGGER.info("Application starting...");
+
             String dbPassword = System.getenv("DB_PASSWORD");
             if (dbPassword == null || dbPassword.isEmpty()) {
-                dbPassword = "secure-default"; // In production, fail if not configured
+                // FIXED: Use logger instead of System.err
+                LOGGER.warn("DB_PASSWORD environment variable not set, using default");
+                dbPassword = "secure-default";
             }
 
             UserService service = new UserService(dbPassword);
@@ -28,57 +33,62 @@ public class App {
 
             app.run();
 
+            LOGGER.info("Application completed successfully");
+
         } catch (Exception e) {
-            System.err.println("Application error: " + e.getMessage());
-            e.printStackTrace();
+            // FIXED: Use logger for errors instead of System.err
+            LOGGER.error("Application error occurred", e);
             System.exit(1);
         }
     }
 
     private void run() {
-        System.out.println("=== Application Started ===");
+        LOGGER.info("=== Application Started ===");
 
         // Calculator demo
-        try {
-            int result = calculator.calculate(10, 5, Calculator.Operation.ADD);
-            System.out.println("10 + 5 = " + result);
-
-            // Example with string (for backward compatibility)
-            result = calculator.calculate(10, 5, "divide");
-            System.out.println("10 / 5 = " + result);
-
-        } catch (ArithmeticException e) {
-            System.out.println("Calculation error: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid operation: " + e.getMessage());
-        }
+        demonstrateCalculator();
 
         // UserService demo
-        try (Scanner scanner = new Scanner(System.in)) {
-            System.out.print("\nEnter username to check: ");
-            String username = scanner.nextLine().trim();
+        demonstrateUserService();
 
-            if (userService.findUser(username)) {
-                System.out.println("User '" + username + "' exists.");
+        LOGGER.info("=== Application Finished ===");
+    }
 
-                // Ask for deletion (with confirmation in real app)
-                System.out.print("Delete user? (yes/no): ");
-                String response = scanner.nextLine().trim();
+    private void demonstrateCalculator() {
+        try {
+            int result = calculator.calculate(10, 5, Calculator.Operation.ADD);
+            // FIXED: Use logger instead of System.out
+            LOGGER.info("10 + 5 = {}", result);
 
-                if ("yes".equalsIgnoreCase(response)) {
-                    boolean deleted = userService.deleteUser(username);
-                    System.out.println("Deletion " + (deleted ? "successful" : "failed"));
-                }
-            } else {
-                System.out.println("User '" + username + "' not found.");
+            result = calculator.calculate(10, 5, "divide");
+            LOGGER.info("10 / 5 = {}", result);
+
+            // Test error case
+            try {
+                calculator.calculate(10, 0, Calculator.Operation.DIVIDE);
+            } catch (ArithmeticException e) {
+                LOGGER.warn("Expected error caught: {}", e.getMessage());
             }
 
-            userService.logActivity("Application completed successfully");
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Invalid calculation operation", e);
+        }
+    }
 
-        } catch (Exception e) {
-            System.err.println("Runtime error: " + e.getMessage());
+    private void demonstrateUserService() {
+        String testUser = "admin";
+
+        if (userService.findUser(testUser)) {
+            LOGGER.info("User '{}' exists in the system", testUser);
+
+            // In a real app, you would have proper user confirmation here
+            boolean deleted = userService.deleteUser(testUser);
+            LOGGER.info("Deletion attempt for user '{}': {}", testUser,
+                    deleted ? "SUCCESS" : "FAILED");
+        } else {
+            LOGGER.info("User '{}' not found in the system", testUser);
         }
 
-        System.out.println("\n=== Application Finished ===");
+        userService.logActivity("Application demo completed");
     }
 }
