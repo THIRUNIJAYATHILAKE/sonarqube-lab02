@@ -12,16 +12,30 @@ import java.util.logging.Logger;
 public class UserService {
 
     private final String password;
-    // Using java.util.logging with a small adapter to avoid external SLF4J dependency
+    // Using java.util.logging with a small adapter to avoid external SLF4J
+    // dependency
     private static final Logger JUL = Logger.getLogger(UserService.class.getName());
     private static final SimpleLogger LOGGER = new SimpleLogger(JUL);
 
     private static final class SimpleLogger {
         private final Logger jul;
-        SimpleLogger(Logger jul) { this.jul = jul; }
-        void info(String msg, Object... args) { jul.log(Level.INFO, format(msg, args)); }
-        void warn(String msg, Object... args) { jul.log(Level.WARNING, format(msg, args)); }
-        void debug(String msg, Object... args) { jul.log(Level.FINE, format(msg, args)); }
+
+        SimpleLogger(Logger jul) {
+            this.jul = jul;
+        }
+
+        void info(String msg, Object... args) {
+            jul.log(Level.INFO, format(msg, args));
+        }
+
+        void warn(String msg, Object... args) {
+            jul.log(Level.WARNING, format(msg, args));
+        }
+
+        void debug(String msg, Object... args) {
+            jul.log(Level.FINE, format(msg, args));
+        }
+
         void error(String msg, Object... args) {
             if (args != null && args.length > 0 && args[args.length - 1] instanceof Throwable) {
                 Throwable t = (Throwable) args[args.length - 1];
@@ -31,8 +45,10 @@ public class UserService {
                 jul.log(Level.SEVERE, format(msg, args));
             }
         }
+
         private String format(String template, Object... args) {
-            if (template == null) return null;
+            if (template == null)
+                return null;
             String fmt = template.replace("{}", "%s");
             try {
                 return String.format(fmt, args);
