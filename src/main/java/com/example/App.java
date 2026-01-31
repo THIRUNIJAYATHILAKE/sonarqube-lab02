@@ -1,14 +1,14 @@
 package com.example;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class App {
 
     private final UserService userService;
     private final Calculator calculator;
-    // FIXED: Use SLF4J logger instead of System.out/err
-    private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
+    // Use java.util.logging to avoid requiring SLF4J on the classpath
+    private static final Logger LOGGER = Logger.getLogger(App.class.getName());
 
     public App(UserService userService, Calculator calculator) {
         this.userService = userService;
@@ -17,13 +17,13 @@ public class App {
 
     public static void main(String[] args) {
         try {
-            // FIXED: Use logger for startup message
+            // Use logger for startup message
             LOGGER.info("Application starting...");
 
             String dbPassword = System.getenv("DB_PASSWORD");
             if (dbPassword == null || dbPassword.isEmpty()) {
-                // FIXED: Use logger instead of System.err
-                LOGGER.warn("DB_PASSWORD environment variable not set, using default");
+                // Use logger instead of System.err
+                LOGGER.warning("DB_PASSWORD environment variable not set, using default");
                 dbPassword = "secure-default";
             }
 
@@ -36,8 +36,8 @@ public class App {
             LOGGER.info("Application completed successfully");
 
         } catch (Exception e) {
-            // FIXED: Use logger for errors instead of System.err
-            LOGGER.error("Application error occurred", e);
+            // Use logger for errors instead of System.err
+            LOGGER.log(Level.SEVERE, "Application error occurred", e);
             System.exit(1);
         }
     }
@@ -57,21 +57,21 @@ public class App {
     private void demonstrateCalculator() {
         try {
             int result = calculator.calculate(10, 5, Calculator.Operation.ADD);
-            // FIXED: Use logger instead of System.out
-            LOGGER.info("10 + 5 = {}", result);
+            // Use logger instead of System.out
+            LOGGER.info("10 + 5 = " + result);
 
             result = calculator.calculate(10, 5, "divide");
-            LOGGER.info("10 / 5 = {}", result);
+            LOGGER.info("10 / 5 = " + result);
 
             // Test error case
             try {
                 calculator.calculate(10, 0, Calculator.Operation.DIVIDE);
             } catch (ArithmeticException e) {
-                LOGGER.warn("Expected error caught: {}", e.getMessage());
+                LOGGER.warning("Expected error caught: " + e.getMessage());
             }
 
         } catch (IllegalArgumentException e) {
-            LOGGER.error("Invalid calculation operation", e);
+            LOGGER.log(Level.SEVERE, "Invalid calculation operation", e);
         }
     }
 
@@ -79,14 +79,14 @@ public class App {
         String testUser = "admin";
 
         if (userService.findUser(testUser)) {
-            LOGGER.info("User '{}' exists in the system", testUser);
+            LOGGER.info(String.format("User '%s' exists in the system", testUser));
 
             // In a real app, you would have proper user confirmation here
             boolean deleted = userService.deleteUser(testUser);
-            LOGGER.info("Deletion attempt for user '{}': {}", testUser,
-                    deleted ? "SUCCESS" : "FAILED");
+            LOGGER.info(String.format("Deletion attempt for user '%s': %s", testUser,
+                    deleted ? "SUCCESS" : "FAILED"));
         } else {
-            LOGGER.info("User '{}' not found in the system", testUser);
+            LOGGER.info(String.format("User '%s' not found in the system", testUser));
         }
 
         userService.logActivity("Application demo completed");

@@ -5,14 +5,42 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class UserService {
 
     private final String password;
-    // FIXED: Use SLF4J logger instead of java.util.logging
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
+    // Using java.util.logging with a small adapter to avoid external SLF4J dependency
+    private static final Logger JUL = Logger.getLogger(UserService.class.getName());
+    private static final SimpleLogger LOGGER = new SimpleLogger(JUL);
+
+    private static final class SimpleLogger {
+        private final Logger jul;
+        SimpleLogger(Logger jul) { this.jul = jul; }
+        void info(String msg, Object... args) { jul.log(Level.INFO, format(msg, args)); }
+        void warn(String msg, Object... args) { jul.log(Level.WARNING, format(msg, args)); }
+        void debug(String msg, Object... args) { jul.log(Level.FINE, format(msg, args)); }
+        void error(String msg, Object... args) {
+            if (args != null && args.length > 0 && args[args.length - 1] instanceof Throwable) {
+                Throwable t = (Throwable) args[args.length - 1];
+                Object[] trimmed = Arrays.copyOf(args, args.length - 1);
+                jul.log(Level.SEVERE, format(msg, trimmed), t);
+            } else {
+                jul.log(Level.SEVERE, format(msg, args));
+            }
+        }
+        private String format(String template, Object... args) {
+            if (template == null) return null;
+            String fmt = template.replace("{}", "%s");
+            try {
+                return String.format(fmt, args);
+            } catch (Exception e) {
+                return fmt;
+            }
+        }
+    }
 
     public UserService(String dbPassword) {
         this.password = dbPassword;
